@@ -1,4 +1,27 @@
 
+// --- overwrite: robust JSON loader & better errors ---
+function fetchJSON(path){
+  return fetch(path, {cache:'no-store'}).then(async (res)=>{
+    if(!res.ok){
+      const hint = (res.status===404? ' (404 — 파일 경로나 배포 폴더 확인)' : '');
+      throw new Error(`HTTP ${res.status}${hint}: ${path}`);
+    }
+    const ct = (res.headers.get('content-type')||'').toLowerCase();
+    const text = await res.text();
+    if(!/application\/json|text\/json/.test(ct)){
+      if(text.trim().startsWith('<!DOCTYPE')){
+        throw new Error(`JSON 대신 HTML 수신: ${path} — GitHub Pages 경로/서브경로 문제 가능`);
+      }
+      try{ return JSON.parse(text); }catch(e){
+        throw new Error(`JSON 파싱 실패: ${path} — ${e.message}`);
+      }
+    }
+    try{ return JSON.parse(text); }catch(e){
+      throw new Error(`JSON 파싱 실패: ${path} — ${e.message}`);
+    }
+  });
+}
+
 const chat = document.getElementById('chat');
 const inp = document.getElementById('inp');
 const sendBtn = document.getElementById('send');
@@ -21,8 +44,7 @@ function bubble(text, who='bot'){
 }
 
 async function loadKcdSpec(){
-  const res = await fetch('data/kcd_specialty.json');
-  return await res.json();
+  return await fetchJSON('data/kcd_specialty.json');
 }
 
 function getProfile(){
@@ -41,7 +63,7 @@ async function classifyWithOpenAI(text, kcdData, profile){
     throw new Error('env.js의 OPENAI_API_KEY를 설정하세요.');
   }
   const kcdList = Object.keys(kcdData).slice(0, 5000); // safety cap
-  const sys = '너는 환자 증상 텍스트를 한국표준질병사인분류 KCD8 코드 중 하나로 분류하는 도우미야. 가능한 KCD 후보 목록이 주어질 것이고, 반드시 그 목록 중 하나의 코드를 골라. 출력은 JSON으로만: {\"kcd\":\"코드\",\"confidence\":0~1,\"reason\":\"한 줄 근거\"}';
+  const sys = '너는 환자 증상 텍스트를 한국표준질병사인분류 KCD8 코드 중 하나로 분류하는 도우미야. 가능한 KCD 후보 목록이 주어질 것이고, 반드시 그 목록 중 하나의 코드를 골라. 출력은 JSON으로만: {"kcd":"코드","confidence":0~1,"reason":"한 줄 근거"}';
   const pro = (profile && profile.consent) ? 
     `환자 프로필(참고): 나이=${profile.age||""}, 성별=${profile.sex||""}, 기저질환=${(profile.conditions||[]).join(",")}, 알레르기=${(profile.allergies||[]).join(",")}` : "";
   const user = `증상: """${text}""" \n가능한 KCD 코드들(중 하나만 선택): ${kcdList.join(", ")}\n${pro}`;
@@ -64,14 +86,20 @@ async function classifyWithOpenAI(text, kcdData, profile){
     },
     body: JSON.stringify(body)
   });
-  const json = await res.json();
+  const txt = await res.text();
+  let json;
+  try { json = JSON.parse(txt); } catch(e){
+    if(txt.trim().startsWith('<!DOCTYPE')){
+      throw new Error('OpenAI 응답이 HTML입니다 — 네트워크/프록시/브라우저 플러그인 문제 가능');
+    }
+    throw new Error('OpenAI 응답 파싱 실패: ' + e.message);
+  }
   if(!res.ok){
-    console.error(json);
     throw new Error(json.error?.message || 'OpenAI API 오류');
   }
   let parsed = {};
   try{ parsed = JSON.parse(json.choices[0].message.content); }catch(e){
-    throw new Error('모델 응답 파싱 실패');
+    throw new Error('모델 응답(JSON) 파싱 실패');
   }
   return parsed;
 }

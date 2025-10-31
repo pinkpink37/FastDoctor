@@ -1,9 +1,29 @@
 
 const FD_TRIAGE = (() => {
 
+  async function fetchJSON(path){
+    const res = await fetch(path, {cache:'no-store'});
+    const text = await res.text();
+    if(!res.ok){
+      const hint = (res.status===404? ' (404 — 파일 경로나 배포 폴더 확인)' : '');
+      throw new Error(`HTTP ${res.status}${hint}: ${path}`);
+    }
+    const ct = (res.headers.get('content-type')||'').toLowerCase();
+    if(!/application\/json|text\/json/.test(ct)){
+      if(text.trim().startsWith('<!DOCTYPE')){
+        throw new Error(`JSON 대신 HTML 수신: ${path} — 경로 또는 GitHub Pages 서브경로 문제 가능`);
+      }
+      try{ return JSON.parse(text); }catch(e){
+        throw new Error(`JSON 파싱 실패: ${path} — ${e.message}`);
+      }
+    }
+    try{ return JSON.parse(text); }catch(e){
+      throw new Error(`JSON 파싱 실패: ${path} — ${e.message}`);
+    }
+  }
+
   async function loadKtas(age){
-    const res = await fetch('data/ktas_rules.json');
-    const j = await res.json();
+    const j = await fetchJSON('data/ktas_rules.json');
     return age < 15 ? j.under15 : j.over15;
   }
 
@@ -41,16 +61,33 @@ const FD_TRIAGE = (() => {
     });
   }
 
+  function advise(level){
+    switch(level){
+      case 1: return '즉시 <b>119</b> 또는 가장 가까운 응급실로 이동하세요.';
+      case 2: return '가능한 한 빨리 <b>응급실</b> 방문을 권고합니다.';
+      case 3: return '오늘 내로 가까운 병원 방문을 권장합니다. 심해지면 응급실을 고려하세요.';
+      case 4: return '가까운 의원/병원 외래 진료를 권장합니다.';
+      case 5: return '휴식과 수분섭취 등 자가 관찰을 권장합니다. 악화 시 병원 방문.';
+    }
+    return '';
+  }
+
   async function askFlow(text, profile){
     const age = Number(profile?.age||0);
-    const ktas = await loadKtas(age);
-    // 1) 정식 룰(키워드 최소 단계) 기반 즉시 판정 시도
-    const found = findLevelFromText(text, ktas.keyword_min_level);
-    if(found){
-      return {level: found, label: labelOf(found), adviceHTML: advise(found)};
+    try{
+      const ktas = await loadKtas(age);
+      const found = findLevelFromText(text, ktas.keyword_min_level);
+      if(found){
+        return {level: found, label: labelOf(found), adviceHTML: advise(found)};
+      }
+    }catch(e){
+      const el = document.createElement('div');
+      el.className = 'bubble bot';
+      el.textContent = 'KTAS 로드 오류: ' + e.message;
+      document.getElementById('chat').appendChild(el);
     }
 
-    // 2) 간이 Q&A (fallback)
+    // fallback Q&A
     if(await yesNo('의식이 없거나, 심한 호흡곤란/질식, 심한 가슴통증, 대량출혈, 전신 경련 중 하나라도 있나요?')){
       return {level: 1, label: labelOf(1), adviceHTML: advise(1)};
     }
@@ -64,17 +101,6 @@ const FD_TRIAGE = (() => {
       return {level: 4, label: labelOf(4), adviceHTML: advise(4)};
     }
     return {level: 5, label: labelOf(5), adviceHTML: advise(5)};
-  }
-
-  function advise(level){
-    switch(level){
-      case 1: return '즉시 <b>119</b> 또는 가장 가까운 응급실로 이동하세요.';
-      case 2: return '가능한 한 빨리 <b>응급실</b> 방문을 권고합니다.';
-      case 3: return '오늘 내로 가까운 병원 방문을 권장합니다. 심해지면 응급실을 고려하세요.';
-      case 4: return '가까운 의원/병원 외래 진료를 권장합니다.';
-      case 5: return '휴식과 수분섭취 등 자가 관찰을 권장합니다. 악화 시 병원 방문.';
-    }
-    return '';
   }
 
   return { askFlow };
