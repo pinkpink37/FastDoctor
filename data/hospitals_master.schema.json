@@ -1,0 +1,56 @@
+{
+  "file": "data/hospitals_master.csv",
+  "description": "앱이 기대하는 병원 마스터 스키마",
+  "columns": [
+    {
+      "name": "id",
+      "type": "string",
+      "desc": "고유 ID"
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "desc": "병원명"
+    },
+    {
+      "name": "lat",
+      "type": "number",
+      "desc": "위도(WGS84)"
+    },
+    {
+      "name": "lng",
+      "type": "number",
+      "desc": "경도(WGS84)"
+    },
+    {
+      "name": "address",
+      "type": "string",
+      "desc": "주소"
+    },
+    {
+      "name": "specialties",
+      "type": "string",
+      "desc": "진료과목명 '|' 구분 (예: '내과|소아청소년과')"
+    },
+    {
+      "name": "hours_json",
+      "type": "json",
+      "desc": "요일별 영업시간 JSON (예: {\"Mon\":[[\"09:00\",\"18:00\"]],\"Sat\":[[\"09:00\",\"13:00\"]]})"
+    },
+    {
+      "name": "rating",
+      "type": "number?",
+      "desc": "평점(0~5) 선택"
+    },
+    {
+      "name": "congestion",
+      "type": "number?",
+      "desc": "혼잡도(0.0~1.0, 클수록 혼잡) 선택"
+    },
+    {
+      "name": "place_url",
+      "type": "string?",
+      "desc": "상세 페이지 URL(선택)"
+    }
+  ]
+}
