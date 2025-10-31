@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Fast Doctor — 증상 입력</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2F6FFF">
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="env.js"></script>
+  <script defer src="triage.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="header">
+    <a class="brand" href="./">
+      <img class="logo" src="icons/icon-192.png" alt="logo"/>
+      <span class="title">Fast Doctor</span>
+    </a>
+    <div class="badge">모바일 전용 · PWA</div>
+    <a class="btn ghost" style="margin-left:auto" href="profile.html">프로필</a>
+  </header>
+
+  <main class="container">
+    <div class="card" style="margin-top:12px">
+      <h2 style="margin:0 0 10px;font-size:20px">증상을 입력하세요</h2>
+      <div id="chat" class="chat">
+        <div class="bubble bot">안녕하세요! 증상을 한국어로 편하게 적어주세요. (예: “갑자기 배가 아프고 설사해요”)</div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <input id="inp" class="input" placeholder="증상 입력..." />
+        <button id="send" class="btn">보내기</button>
+      </div>
+      <div class="note" style="margin-top:8px">※ 의료 자문이 아니며, 정보 제공 목적입니다.</div>
+    </div>
+
+    <div id="resultCard" class="card hidden" style="margin-top:12px">
+      <h3 style="margin:0 0 8px;font-size:18px">증상 파악 완료</h3>
+      <div class="chips" id="subjectChips"></div>
+      <div style="margin:8px 0 6px;font-weight:700">위급도</div>
+      <div class="gauge-wrap"><div id="gauge" class="gauge-bar"></div></div>
+      <div class="small" id="acuText" style="margin-top:6px"></div>
+
+      <div style="margin-top:10px">
+        <div style="font-weight:700;margin-bottom:6px">권장 조치</div>
+        <div id="advice" class="note"></div>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <button id="toMap" class="btn">지도로 이동하기</button>
+        <button id="retry" class="btn secondary">다시 입력</button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="small">© Fast Doctor · “의료 자문 아님” · 로컬 저장 우선</div>
+  </footer>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./service-worker.js');
+    }
+  </script>
+</body>
+</html>

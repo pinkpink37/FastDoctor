@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Fast Doctor — 지도</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="env.js"></script>
+  <script defer src="map.js"></script>
+  <script>
+    // Kakao Maps loader
+    document.addEventListener('DOMContentLoaded', () => {
+      const key = (window.ENV && ENV.KAKAO_JS_KEY) || "";
+      if(!key || key === "REPLACE_ME"){
+        alert("env.js의 KAKAO_JS_KEY를 설정하세요.");
+      }
+      const s = document.createElement('script');
+      s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${key}&libraries=services`;
+      s.async = true; document.head.appendChild(s);
+    });
+  </script>
+</head>
+<body>
+  <header class="header">
+    <a class="brand" href="./">
+      <img class="logo" src="icons/icon-192.png" alt="logo"/>
+      <span class="title">Fast Doctor</span>
+    </a>
+    <div class="badge">지도</div>
+  </header>
+  <main class="container">
+    <div id="map" class="map"></div>
+    <div class="sheet" id="sheet">
+      <div class="grab"></div>
+      <div class="row" style="margin-bottom:8px">
+        <div class="chip" id="specTag">전문의 검색</div>
+        <button id="recenter" class="btn secondary" style="flex:0 0 auto">내 위치</button>
+      </div>
+      <div id="list" class="list"></div>
+    </div>
+  </main>
+</body>
+</html>
