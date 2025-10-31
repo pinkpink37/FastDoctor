@@ -1,0 +1,12 @@
+.DS_Store
+node_modules
+dist
+.env
+.env.*
+.vscode
+.idea
+*.log
+# Python virtualenvs
+kiosk_keyboard/.venv
+# Build artifacts
+*.zip
